@@ -1,13 +1,7 @@
 pipeline {
     agent any
 
-    tools {
-        'jenkins.plugins.shiningpanda.tools.PythonInstallation' 'python3'
-        dockerTool 'Docker compose'
-    }
-
     environment {
-        PATH = "${tool 'jenkins.plugins.shiningpanda.tools.PythonInstallation'}/bin:${env.PATH}"
         DOCKER_COMPOSE = 'docker-compose'
     }
 
@@ -26,7 +20,6 @@ pipeline {
                     sh '''
                         python3 -m venv venv
                         . venv/bin/activate
-                        pip install --upgrade pip
                         pip install -r requirements.txt
                         python manage.py test --verbosity=2
                     '''
@@ -41,7 +34,6 @@ pipeline {
                     sh '''
                         python3 -m venv venv
                         . venv/bin/activate
-                        pip install --upgrade pip
                         pip install -r requirements.txt
                         python manage.py test --verbosity=2
                     '''
@@ -56,7 +48,6 @@ pipeline {
                     sh '''
                         python3 -m venv venv
                         . venv/bin/activate
-                        pip install --upgrade pip
                         pip install -r requirements.txt
                         python manage.py test --verbosity=2
                     '''
@@ -99,12 +90,11 @@ pipeline {
 
     post {
         success {
-            echo ' Pipeline execute avec succes ! Tous les microservices sont deployes.'
+            echo 'Pipeline execute avec succes ! Tous les microservices sont deployes.'
         }
         failure {
-            echo ' Le pipeline a echoue. Verifiez les logs.'
-            // On utilise || true pour éviter que le pipeline ne plante si docker-compose logs échoue
-            sh "${DOCKER_COMPOSE} logs || true"
+            echo 'Le pipeline a echoue. Verifiez les logs.'
+            sh "${DOCKER_COMPOSE} logs"
         }
         always {
             sh 'rm -rf users-service/venv books-service/venv borrowings-service/venv || true'
