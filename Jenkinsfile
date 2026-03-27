@@ -101,10 +101,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline execute avec succes ! Tous les microservices sont deployes.'
+            echo ' Pipeline execute avec succes ! Tous les microservices sont deployes.'
         }
         failure {
-            echo '❌ Le pipeline a echoue. Verifiez les logs.'
+            echo ' Le pipeline a echoue. Verifiez les logs.'
             // On utilise || true pour éviter que le pipeline ne plante si docker-compose logs échoue
             sh "${DOCKER_COMPOSE} logs || true"
         }
