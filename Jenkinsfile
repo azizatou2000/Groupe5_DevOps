@@ -1,7 +1,15 @@
 pipeline {
     agent any
 
+    tools {
+        // Ces noms doivent correspondre EXACTEMENT aux noms saisis dans "Global Tool Configuration"
+        python 'python3'
+        dockerTool 'Docker compose'
+    }
+
     environment {
+        // On s'assure que les binaires installés par Jenkins sont prioritaires
+        PATH = "${tool 'python3'}/bin:${env.PATH}"
         DOCKER_COMPOSE = 'docker-compose'
     }
 
@@ -20,6 +28,7 @@ pipeline {
                     sh '''
                         python3 -m venv venv
                         . venv/bin/activate
+                        pip install --upgrade pip
                         pip install -r requirements.txt
                         python manage.py test --verbosity=2
                     '''
@@ -34,6 +43,7 @@ pipeline {
                     sh '''
                         python3 -m venv venv
                         . venv/bin/activate
+                        pip install --upgrade pip
                         pip install -r requirements.txt
                         python manage.py test --verbosity=2
                     '''
@@ -48,6 +58,7 @@ pipeline {
                     sh '''
                         python3 -m venv venv
                         . venv/bin/activate
+                        pip install --upgrade pip
                         pip install -r requirements.txt
                         python manage.py test --verbosity=2
                     '''
@@ -94,7 +105,8 @@ pipeline {
         }
         failure {
             echo '❌ Le pipeline a echoue. Verifiez les logs.'
-            sh "${DOCKER_COMPOSE} logs"
+            // On utilise || true pour éviter que le pipeline ne plante si docker-compose logs échoue
+            sh "${DOCKER_COMPOSE} logs || true"
         }
         always {
             sh 'rm -rf users-service/venv books-service/venv borrowings-service/venv || true'
