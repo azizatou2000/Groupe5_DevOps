@@ -2,14 +2,12 @@ pipeline {
     agent any
 
     tools {
-        // Ces noms doivent correspondre EXACTEMENT aux noms saisis dans "Global Tool Configuration"
-        python 'python3'
+        'jenkins.plugins.shiningpanda.tools.PythonInstallation' 'python3'
         dockerTool 'Docker compose'
     }
 
     environment {
-        // On s'assure que les binaires installés par Jenkins sont prioritaires
-        PATH = "${tool 'python3'}/bin:${env.PATH}"
+        PATH = "${tool 'jenkins.plugins.shiningpanda.tools.PythonInstallation'}/bin:${env.PATH}"
         DOCKER_COMPOSE = 'docker-compose'
     }
 
