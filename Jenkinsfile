@@ -17,23 +17,13 @@ pipeline {
             steps {
                 echo 'Tests du microservice Utilisateurs...'
                 dir('users-service') {
-                    script {
-                        if (isUnix()) {
-                            sh '''
-                                python3 -m venv venv
-                                . venv/bin/activate
-                                pip install -r requirements.txt
-                                python manage.py test --verbosity=2
-                            '''
-                        } else {
-                            bat '''
-                                python -m venv venv
-                                call venv\\Scripts\\activate
-                                pip install -r requirements.txt
-                                python manage.py test --verbosity=2
-                            '''
-                        }
-                    }
+                    // On force BAT car nous sommes sur Windows
+                    bat '''
+                        python -m venv venv
+                        call venv\\Scripts\\activate
+                        pip install -r requirements.txt
+                        python manage.py test --verbosity=2
+                    '''
                 }
             }
         }
@@ -42,23 +32,12 @@ pipeline {
             steps {
                 echo 'Tests du microservice Livres...'
                 dir('books-service') {
-                    script {
-                        if (isUnix()) {
-                            sh '''
-                                python3 -m venv venv
-                                . venv/bin/activate
-                                pip install -r requirements.txt
-                                python manage.py test --verbosity=2
-                            '''
-                        } else {
-                            bat '''
-                                python -m venv venv
-                                call venv\\Scripts\\activate
-                                pip install -r requirements.txt
-                                python manage.py test --verbosity=2
-                            '''
-                        }
-                    }
+                    bat '''
+                        python -m venv venv
+                        call venv\\Scripts\\activate
+                        pip install -r requirements.txt
+                        python manage.py test --verbosity=2
+                    '''
                 }
             }
         }
@@ -67,23 +46,12 @@ pipeline {
             steps {
                 echo 'Tests du microservice Emprunts...'
                 dir('borrowings-service') {
-                    script {
-                        if (isUnix()) {
-                            sh '''
-                                python3 -m venv venv
-                                . venv/bin/activate
-                                pip install -r requirements.txt
-                                python manage.py test --verbosity=2
-                            '''
-                        } else {
-                            bat '''
-                                python -m venv venv
-                                call venv\\Scripts\\activate
-                                pip install -r requirements.txt
-                                python manage.py test --verbosity=2
-                            '''
-                        }
-                    }
+                    bat '''
+                        python -m venv venv
+                        call venv\\Scripts\\activate
+                        pip install -r requirements.txt
+                        python manage.py test --verbosity=2
+                    '''
                 }
             }
         }
@@ -91,87 +59,50 @@ pipeline {
         stage('Build des images Docker') {
             steps {
                 echo 'Construction des images Docker de chaque microservice...'
-                script {
-                    if (isUnix()) {
-                        sh "${DOCKER_COMPOSE} build --no-cache"
-                    } else {
-                        bat "${DOCKER_COMPOSE} build --no-cache"
-                    }
-                }
+                bat "${DOCKER_COMPOSE} build --no-cache"
             }
         }
 
         stage('Deploiement') {
             steps {
                 echo 'Deploiement avec Docker Compose...'
-                script {
-                    if (isUnix()) {
-                        sh """
-                            ${DOCKER_COMPOSE} down || true
-                            ${DOCKER_COMPOSE} up -d
-                        """
-                    } else {
-                        bat """
-                            ${DOCKER_COMPOSE} down
-                            ${DOCKER_COMPOSE} up -d
-                        """
-                    }
-                }
+                bat """
+                    ${DOCKER_COMPOSE} down
+                    ${DOCKER_COMPOSE} up -d
+                """
             }
         }
 
         stage('Verification du deploiement') {
             steps {
                 echo 'Verification que les microservices sont accessibles...'
-                script {
-                    if (isUnix()) {
-                        sh '''
-                            sleep 15
-                            echo "Users Service:"
-                            curl -f http://localhost:8001/swagger/ || echo "ERREUR"
-                            echo "Books Service:"
-                            curl -f http://localhost:8002/swagger/ || echo "ERREUR"
-                            echo "Borrowings Service:"
-                            curl -f http://localhost:8003/swagger/ || echo "ERREUR"
-                        '''
-                    } else {
-                        bat '''
-                            timeout /t 15 /nobreak
-                            echo Users Service:
-                            curl -f http://localhost:8001/swagger/ || echo ERREUR
-                            echo Books Service:
-                            curl -f http://localhost:8002/swagger/ || echo ERREUR
-                            echo Borrowings Service:
-                            curl -f http://localhost:8003/swagger/ || echo ERREUR
-                        '''
-                    }
-                }
+                // timeout est l'equivalent de sleep sur Windows
+                bat '''
+                    timeout /t 20 /nobreak
+                    echo "Users Service:"
+                    curl -I http://localhost:8001/swagger/ || echo "ERREUR"
+                    echo "Books Service:"
+                    curl -I http://localhost:8002/swagger/ || echo "ERREUR"
+                    echo "Borrowings Service:"
+                    curl -I http://localhost:8003/swagger/ || echo "ERREUR"
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline execute avec succes ! Tous les microservices sont deployes.'
+            echo ' Pipeline execute avec succes ! Tous les microservices sont deployes.'
         }
         failure {
-            echo 'Le pipeline a echoue. Verifiez les logs.'
-            script {
-                if (isUnix()) {
-                    sh "${DOCKER_COMPOSE} logs"
-                } else {
-                    bat "${DOCKER_COMPOSE} logs"
-                }
-            }
+            echo ' Le pipeline a echoue. Verifiez les logs.'
+            bat "${DOCKER_COMPOSE} logs"
         }
         always {
-            script {
-                if (isUnix()) {
-                    sh 'rm -rf users-service/venv books-service/venv borrowings-service/venv || true'
-                } else {
-                    bat 'rd /s /q users-service\\venv books-service\\venv borrowings-service\\venv || ver > nul'
-                }
-            }
+            // Nettoyage des dossiers venv (format Windows)
+            bat 'if exist users-service\\venv rd /s /q users-service\\venv'
+            bat 'if exist books-service\\venv rd /s /q books-service\\venv'
+            bat 'if exist borrowings-service\\venv rd /s /q borrowings-service\\venv'
         }
     }
 }
