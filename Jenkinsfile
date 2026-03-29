@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        COMPOSE_PROJECT_NAME = "biblio"
+    }
+
     stages {
 
         stage('Recuperation du code') {
@@ -15,23 +19,17 @@ pipeline {
                 echo 'Nettoyage complet de Docker...'
                 sh '''
                 docker-compose down --volumes --remove-orphans || true
-                docker rm -f bibliotheque_db || true
                 docker system prune -f || true
                 '''
             }
         }
 
-        stage('Build des images Docker') {
+        stage('Build & Deploy') {
             steps {
-                echo 'Construction des images Docker...'
-                sh 'docker-compose build'
-            }
-        }
-
-        stage('Deploiement') {
-            steps {
-                echo 'Deploiement avec Docker Compose...'
-                sh 'docker-compose up -d'
+                echo 'Build et lancement des conteneurs...'
+                sh '''
+                docker-compose up -d --build
+                '''
             }
         }
 
@@ -39,8 +37,12 @@ pipeline {
             steps {
                 echo 'Attente du demarrage des services...'
                 sh 'sleep 20'
-                echo 'Verification des conteneurs...'
+
+                echo 'Etat des conteneurs :'
                 sh 'docker-compose ps'
+
+                echo 'Verification rapide des logs :'
+                sh 'docker-compose logs --tail=50'
             }
         }
     }
@@ -49,9 +51,17 @@ pipeline {
         success {
             echo 'Pipeline execute avec succes !'
         }
+
         failure {
-            echo 'Le pipeline a echoue.'
-            sh 'docker-compose logs || true'
+            echo 'Le pipeline a echoue. Affichage des logs...'
+            sh '''
+            docker-compose ps
+            docker-compose logs --tail=100
+            '''
+        }
+
+        always {
+            echo 'Nettoyage final (optionnel)...'
         }
     }
 }
