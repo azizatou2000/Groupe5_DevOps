@@ -10,6 +10,17 @@ pipeline {
             }
         }
 
+        stage('Clean Docker') {
+            steps {
+                echo 'Nettoyage complet de Docker...'
+                sh '''
+                docker-compose down --volumes --remove-orphans || true
+                docker rm -f bibliotheque_db || true
+                docker system prune -f || true
+                '''
+            }
+        }
+
         stage('Build des images Docker') {
             steps {
                 echo 'Construction des images Docker...'
@@ -19,8 +30,6 @@ pipeline {
 
         stage('Deploiement') {
             steps {
-                echo 'Arret des anciens conteneurs...'
-                sh 'docker-compose down || true'
                 echo 'Deploiement avec Docker Compose...'
                 sh 'docker-compose up -d'
             }
