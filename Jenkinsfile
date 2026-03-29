@@ -2,102 +2,72 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_COMPOSE = 'docker-compose'
+        COMPOSE_PROJECT_NAME = "biblio"
     }
 
     stages {
+
         stage('Recuperation du code') {
             steps {
                 echo 'Clonage du depot GitHub...'
-                checkout scm
+                git branch: 'develop', url: 'https://github.com/azizatou2000/Groupe5_DevOps.git'
             }
         }
 
-        stage('Tests - Users Service') {
+        stage('Clean Docker') {
             steps {
-                echo 'Tests du microservice Utilisateurs...'
-                dir('users-service') {
-                    sh '''
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install -r requirements.txt
-                        python manage.py test --verbosity=2
-                    '''
-                }
+                echo 'Nettoyage complet de Docker...'
+                sh '''
+                # Stopper tous les conteneurs biblio (toutes builds confondues)
+                docker ps -q --filter "name=biblio" | xargs -r docker stop || true
+                docker ps -aq --filter "name=biblio" | xargs -r docker rm || true
+
+
+                # Down de la stack courante + volumes
+                docker-compose down --volumes --remove-orphans || true
+                docker system prune -f || true
+                '''
             }
         }
 
-        stage('Tests - Books Service') {
+        stage('Build & Deploy') {
             steps {
-                echo 'Tests du microservice Livres...'
-                dir('books-service') {
-                    sh '''
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install -r requirements.txt
-                        python manage.py test --verbosity=2
-                    '''
-                }
-            }
-        }
-
-        stage('Tests - Borrowings Service') {
-            steps {
-                echo 'Tests du microservice Emprunts...'
-                dir('borrowings-service') {
-                    sh '''
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install -r requirements.txt
-                        python manage.py test --verbosity=2
-                    '''
-                }
-            }
-        }
-
-        stage('Build des images Docker') {
-            steps {
-                echo 'Construction des images Docker de chaque microservice...'
-                sh "${DOCKER_COMPOSE} build --no-cache"
-            }
-        }
-
-        stage('Deploiement') {
-            steps {
-                echo 'Deploiement avec Docker Compose...'
-                sh """
-                    ${DOCKER_COMPOSE} down || true
-                    ${DOCKER_COMPOSE} up -d
-                """
+                echo 'Build et lancement des conteneurs...'
+                sh '''
+                docker-compose up -d --build
+                '''
             }
         }
 
         stage('Verification du deploiement') {
             steps {
-                echo 'Verification que les microservices sont accessibles...'
-                sh '''
-                    sleep 15
-                    echo "Users Service:"
-                    curl -f http://localhost:8001/swagger/ || echo "ERREUR"
-                    echo "Books Service:"
-                    curl -f http://localhost:8002/swagger/ || echo "ERREUR"
-                    echo "Borrowings Service:"
-                    curl -f http://localhost:8003/swagger/ || echo "ERREUR"
-                '''
+                echo 'Attente du demarrage des services...'
+                sh 'sleep 20'
+
+                echo 'Etat des conteneurs :'
+                sh 'docker-compose ps'
+
+                echo 'Verification rapide des logs :'
+                sh 'docker-compose logs --tail=50'
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline execute avec succes ! Tous les microservices sont deployes.'
+            echo 'Pipeline execute avec succes !'
         }
+
         failure {
-            echo 'Le pipeline a echoue. Verifiez les logs.'
-            sh "${DOCKER_COMPOSE} logs"
+            echo 'Le pipeline a echoue. Affichage des logs...'
+            sh '''
+            docker-compose ps
+            docker-compose logs --tail=100
+            '''
         }
+
         always {
-            sh 'rm -rf users-service/venv books-service/venv borrowings-service/venv || true'
+            echo 'Nettoyage final (optionnel)...'
         }
     }
 }
