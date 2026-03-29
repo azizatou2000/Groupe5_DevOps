@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        COMPOSE_PROJECT_NAME = "biblio"
-    }
-
     stages {
 
         stage('Recuperation du code') {
@@ -14,28 +10,19 @@ pipeline {
             }
         }
 
-        stage('Clean Docker') {
+        stage('Build des images Docker') {
             steps {
-                echo 'Nettoyage complet de Docker...'
-                sh '''
-                # Stopper tous les conteneurs biblio (toutes builds confondues)
-                docker ps -q --filter "name=biblio" | xargs -r docker stop || true
-                docker ps -aq --filter "name=biblio" | xargs -r docker rm || true
-
-
-                # Down de la stack courante + volumes
-                docker-compose down --volumes --remove-orphans || true
-                docker system prune -f || true
-                '''
+                echo 'Construction des images Docker...'
+                sh 'docker-compose build'
             }
         }
 
-        stage('Build & Deploy') {
+        stage('Deploiement') {
             steps {
-                echo 'Build et lancement des conteneurs...'
-                sh '''
-                docker-compose up -d --build
-                '''
+                echo 'Arret des anciens conteneurs...'
+                sh 'docker-compose down || true'
+                echo 'Deploiement avec Docker Compose...'
+                sh 'docker-compose up -d'
             }
         }
 
@@ -43,12 +30,8 @@ pipeline {
             steps {
                 echo 'Attente du demarrage des services...'
                 sh 'sleep 20'
-
-                echo 'Etat des conteneurs :'
+                echo 'Verification des conteneurs...'
                 sh 'docker-compose ps'
-
-                echo 'Verification rapide des logs :'
-                sh 'docker-compose logs --tail=50'
             }
         }
     }
@@ -57,17 +40,16 @@ pipeline {
         success {
             echo 'Pipeline execute avec succes !'
         }
-
         failure {
-            echo 'Le pipeline a echoue. Affichage des logs...'
-            sh '''
-            docker-compose ps
-            docker-compose logs --tail=100
-            '''
-        }
-
-        always {
-            echo 'Nettoyage final (optionnel)...'
+            echo 'Le pipeline a echoue.'
+            sh 'docker-compose logs || true'
         }
     }
 }
+```
+
+Push sur GitHub :
+```
+git add Jenkinsfile
+git commit -m "Jenkinsfile pour pipeline SCM"
+git push
