@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   # ============================================
@@ -7,7 +5,6 @@ services:
   # ============================================
   db:
     image: postgres:16-alpine
-    container_name: bibliotheque_db
     environment:
       POSTGRES_DB: librairie
       POSTGRES_USER: postgres
@@ -23,13 +20,11 @@ services:
       retries: 5
 
   # ============================================
-  # Microservice Utilisateurs (port 8001)
+  # Microservice Utilisateurs
   # ============================================
   users-service:
     build:
       context: ./users-service
-      dockerfile: Dockerfile
-    container_name: users_service
     environment:
       DJANGO_SECRET_KEY: users-secret-key-change-in-prod
       DJANGO_DEBUG: "True"
@@ -46,13 +41,11 @@ services:
         condition: service_healthy
 
   # ============================================
-  # Microservice Livres (port 8002)
+  # Microservice Livres
   # ============================================
   books-service:
     build:
       context: ./books-service
-      dockerfile: Dockerfile
-    container_name: books_service
     environment:
       DJANGO_SECRET_KEY: books-secret-key-change-in-prod
       DJANGO_DEBUG: "True"
@@ -72,13 +65,11 @@ services:
         condition: service_started
 
   # ============================================
-  # Microservice Emprunts (port 8003)
+  # Microservice Emprunts
   # ============================================
   borrowings-service:
     build:
       context: ./borrowings-service
-      dockerfile: Dockerfile
-    container_name: borrowings_service
     environment:
       DJANGO_SECRET_KEY: borrowings-secret-key-change-in-prod
       DJANGO_DEBUG: "True"
@@ -101,13 +92,11 @@ services:
         condition: service_started
 
   # ============================================
-  # Frontend Vue.js (port 3000)
+  # Frontend Vue.js
   # ============================================
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: bibliotheque_frontend
     ports:
       - "3000:3000"
     depends_on:
