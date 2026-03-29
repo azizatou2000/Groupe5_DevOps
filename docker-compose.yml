@@ -9,7 +9,7 @@ services:
     image: postgres:16-alpine
     container_name: bibliotheque_db
     environment:
-      POSTGRES_DB: bibliotheque_dit
+      POSTGRES_DB: librairie
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
@@ -34,7 +34,7 @@ services:
       DJANGO_SECRET_KEY: users-secret-key-change-in-prod
       DJANGO_DEBUG: "True"
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,users-service
-      POSTGRES_DB: bibliotheque_dit
+      POSTGRES_DB: librairie
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: db
@@ -57,7 +57,7 @@ services:
       DJANGO_SECRET_KEY: books-secret-key-change-in-prod
       DJANGO_DEBUG: "True"
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,books-service
-      POSTGRES_DB: bibliotheque_dit
+      POSTGRES_DB: librairie
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: db
@@ -83,7 +83,7 @@ services:
       DJANGO_SECRET_KEY: borrowings-secret-key-change-in-prod
       DJANGO_DEBUG: "True"
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,borrowings-service
-      POSTGRES_DB: bibliotheque_dit
+      POSTGRES_DB: librairie
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: db
@@ -101,19 +101,19 @@ services:
         condition: service_started
 
   # ============================================
-  # Frontend (a completer par le dev frontend)
+  # Frontend Vue.js (port 3000)
   # ============================================
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: bibliotheque_frontend
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - users-service
-  #     - books-service
-  #     - borrowings-service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bibliotheque_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - users-service
+      - books-service
+      - borrowings-service
 
 volumes:
   postgres_data:
