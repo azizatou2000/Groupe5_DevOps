@@ -18,6 +18,12 @@ pipeline {
             steps {
                 echo 'Nettoyage complet de Docker...'
                 sh '''
+                # Stopper tous les conteneurs biblio (toutes builds confondues)
+                docker ps -q --filter "name=biblio" | xargs -r docker stop || true
+                docker ps -aq --filter "name=biblio" | xargs -r docker rm || true
+
+
+                # Down de la stack courante + volumes
                 docker-compose down --volumes --remove-orphans || true
                 docker system prune -f || true
                 '''
