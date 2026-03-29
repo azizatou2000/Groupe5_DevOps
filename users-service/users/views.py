@@ -16,6 +16,7 @@ class UserViewSet(viewsets.ModelViewSet):
     retrieve: Consulter un utilisateur
     update: Modifier un utilisateur
     destroy: Supprimer un utilisateur
+    Voilà avec les users 
     """
     queryset = User.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
