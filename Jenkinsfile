@@ -6,13 +6,13 @@ pipeline {
         stage('Recuperation du code') {
             steps {
                 echo 'Clonage du depot GitHub...'
-                checkout scm
+                git branch: 'develop', url: 'https://github.com/azizatou2000/Groupe5_DevOps.git'
             }
         }
 
         stage('Build des images Docker') {
             steps {
-                echo 'Construction des images Docker de chaque microservice...'
+                echo 'Construction des images Docker...'
                 sh 'docker-compose build'
             }
         }
@@ -38,18 +38,18 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline execute avec succes ! Tous les microservices sont deployes.'
+            echo 'Pipeline execute avec succes !'
         }
         failure {
-            echo 'Le pipeline a echoue. Verifiez les logs.'
+            echo 'Le pipeline a echoue.'
             sh 'docker-compose logs || true'
         }
     }
 }
 ```
 
-Remplace le contenu de ton Jenkinsfile par ca, puis :
+Push sur GitHub :
 ```
 git add Jenkinsfile
-git commit -m "Jenkinsfile simplifie pour Jenkins Docker"
+git commit -m "Jenkinsfile pour pipeline SCM"
 git push
