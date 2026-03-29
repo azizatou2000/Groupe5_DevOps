@@ -46,10 +46,3 @@ pipeline {
         }
     }
 }
-```
-
-Push sur GitHub :
-```
-git add Jenkinsfile
-git commit -m "Jenkinsfile pour pipeline SCM"
-git push
