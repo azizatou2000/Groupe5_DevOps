@@ -6,7 +6,6 @@ pipeline {
     }
 
     stages {
-
         stage('Recuperation du code') {
             steps {
                 echo 'Clonage du depot GitHub...'
